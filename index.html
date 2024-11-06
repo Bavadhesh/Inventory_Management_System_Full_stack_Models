@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button { margin: 5px 0; padding: 8px; width: 100%; }
+    button { cursor: pointer; }
+    .item { padding: 10px; border: 1px solid #ddd; margin-top: 10px; }
+    .item span { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Inventory Management</h2>
+  
+  <!-- Form to Add/Edit Item -->
+  <div>
+    <input type="text" id="name" placeholder="Item Name" required />
+    <input type="number" id="quantity" placeholder="Quantity" required />
+    <input type="number" id="price" placeholder="Price" required />
+    <button onclick="addItem()">Add Item</button>
+  </div>
+  
+  <h3>Inventory Items</h3>
+  <div id="inventory"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const API_URL = 'http://localhost:3000/items';
+
+    // Fetch and display items
+    async function fetchItems() {
+      const response = await axios.get(API_URL);
+      const items = response.data;
+      const inventoryDiv = document.getElementById('inventory');
+      inventoryDiv.innerHTML = '';
+      items.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item';
+        itemDiv.innerHTML = `
+          <p><span>Name:</span> ${item.name}</p>
+          <p><span>Quantity:</span> ${item.quantity}</p>
+          <p><span>Price:</span> ${item.price}</p>
+          <button onclick="deleteItem('${item._id}')">Delete</button>
+          <button onclick="editItem('${item._id}', '${item.name}', ${item.quantity}, ${item.price})">Edit</button>
+        `;
+        inventoryDiv.appendChild(itemDiv);
+      });
+    }
+
+    // Add a new item
+    async function addItem() {
+      const name = document.getElementById('name').value;
+      const quantity = document.getElementById('quantity').value;
+      const price = document.getElementById('price').value;
+
+      await axios.post(API_URL, { name, quantity, price });
+      fetchItems();
+      clearForm();
+    }
+
+    // Edit an existing item
+    async function editItem(id, name, quantity, price) {
+      document.getElementById('name').value = name;
+      document.getElementById('quantity').value = quantity;
+      document.getElementById('price').value = price;
+      document.querySelector('button[onclick="addItem()"]').setAttribute('onclick', `updateItem('${id}')`);
+    }
+
+    // Update item
+    async function updateItem(id) {
+      const name = document.getElementById('name').value;
+      const quantity = document.getElementById('quantity').value;
+      const price = document.getElementById('price').value;
+
+      await axios.put(`${API_URL}/${id}`, { name, quantity, price });
+      fetchItems();
+      clearForm();
+      document.querySelector('button[onclick="updateItem(\'' + id + '\')"]').setAttribute('onclick', 'addItem()');
+    }
+
+    // Delete an item
+    async function deleteItem(id) {
+      await axios.delete(`${API_URL}/${id}`);
+      fetchItems();
+    }
+
+    // Clear form
+    function clearForm() {
+      document.getElementById('name').value = '';
+      document.getElementById('quantity').value = '';
+      document.getElementById('price').value = '';
+    }
+
+    // Initial fetch
+    fetchItems();
+  </script>
+</body>
+</html>
